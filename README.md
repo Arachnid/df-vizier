@@ -23,6 +23,8 @@ When a planet is evaluating a target for capture, the general score of the plane
 
 Each run a 'state' variable is maintained, containing dynamic state of interest to handlers; this includes information on the expected incoming energy and silver to each planet, and helps action handlers avoid overallocating sends of energy or silver to target planets.
 
+The UI, such as it is, displays all upcoming actions, and what percentage of the required resource the planet is at before it can enact the action. All settings are made via constants in the source code.
+
 To get started run:
 
 `$ yarn install`  
