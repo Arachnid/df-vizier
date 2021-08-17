@@ -1,7 +1,7 @@
-import { Planet, Player, QueuedArrival, SpaceType, WorldLocation } from "@darkforest_eth/types";
+import { Planet, Player, QueuedArrival, SpaceType, VoyageId, WorldLocation } from "@darkforest_eth/types";
 import GameManager from "@df/GameManager";
 import GameUIManager from "@df/GameUIManager";
-import { TargetIcon } from "@df_client/src/Frontend/Components/Icons";
+import RBush from "rbush";
 
 declare const df: GameManager;
 declare const ui: GameUIManager;
@@ -54,7 +54,7 @@ function getPlanetScoreModifier(planet: Planet): number {
     if(planet.hasTriedFindingArtifact) {
       return 0.0;
     } else {
-      return 2.0;
+      return 1.25;
     }
   case PlanetType.SPACETIME_RIP:
     return 0.5;
@@ -103,14 +103,14 @@ function scorePlanetEnergyNeed(planet: Planet, energy?: number) {
   if(!energy) {
     energy = planet.energy;
   }
-  const baseNeed = Math.pow(planet.energyCap - energy, 2) * planet.speed;
+  const baseNeed = Math.log(planet.energyCap - energy) * planet.range;
   switch(planet.planetType as number) {
   case PlanetType.PLANET:
     return baseNeed;
   case PlanetType.QUASAR:
-    return baseNeed * 1.5;
+    return baseNeed * 1.25;
   case PlanetType.FOUNDRY:
-    return baseNeed * 1.5;
+    return baseNeed * 1.25;
   default:
     return 0.0;
   }
@@ -142,13 +142,21 @@ function getPlanetName(planet: Planet, html: boolean = true): string {
   }
 }
 
+interface PlanetEntry {
+  planet: Planet;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
 class Plugin {
   readonly dryRun = false;
   readonly runInterval = 60000;
   readonly minEnergyReserve = 0.15;
   readonly minCaptureEnergy = 0.05;
   readonly minCaptureLevel = 1; // Relative to max level
-  readonly minActionLevel = 1; // Relative to max level
+  readonly minActionLevel = 2; // Relative to max level
   readonly minSilverSendLevel = 3; // Relative to max level
   readonly bigPirateModifier = 0.8; // Value modifier when partially capturing an unowned planet
   readonly bigEnemyModifier = 0.2; // Value modifier when partially capturing an owned planet
@@ -164,6 +172,7 @@ class Plugin {
   modules: Array<ModuleHandler>;
   player: Player;
   table?: HTMLTableElement;
+  planets: RBush<PlanetEntry>;
   
   constructor() {
     this.modules = [
@@ -172,6 +181,23 @@ class Plugin {
       this.sendEnergy,
       this.capturePlanets,
     ];
+    this.planets = new RBush<PlanetEntry>();
+  }
+
+  buildPlanetIndex(planets: Iterable<Planet>, minLevel: number) {
+    this.planets.load(Array.from(planets)
+      .filter((planet) => planet.planetLevel >= minLevel, planets)
+      .map((planet) => {
+        const location = df.getLocationOfPlanet(planet.locationId) as WorldLocation;
+        if(location === undefined) return undefined;
+        return {
+          minX: location.coords.x,
+          maxX: location.coords.x,
+          minY: location.coords.y,
+          maxY: location.coords.y,
+          planet: planet
+        };
+      }).filter((entry): entry is PlanetEntry => entry !== undefined));
   }
 
   /**
@@ -182,6 +208,7 @@ class Plugin {
     this.table = document.createElement('table');
     container.appendChild(this.table);
     this.player = df.getPlayer() as Player;
+    this.buildPlanetIndex(df.getAllPlanets(), 3);
     await this.run();
   }
 
@@ -260,7 +287,12 @@ class Plugin {
 
   async runOne(planet: Planet, state: RunState): Promise<HandlerResult> {
     const minTargetLevel = state.maxLevel - this.minCaptureLevel;
-    const inRange = df.getPlanetsInRange(planet.locationId, 100).filter((planet) => planet.planetLevel >= minTargetLevel);
+    // const inRange = df.getPlanetsInRange(planet.locationId, 100 * (1 - this.minEnergyReserve)).filter((planet) => planet.planetLevel >= minTargetLevel);
+    const location = df.getLocationOfPlanet(planet.locationId) as WorldLocation;
+    const range = df.getMaxMoveDist(planet.locationId, 100 * (1 - this.minEnergyReserve));
+    const inRange = this.planets.search({minX: location.coords.x - range, minY: location.coords.y - range, maxX: location.coords.x + range, maxY: location.coords.y + range})
+      .map((entry) => entry.planet)
+      .filter((planet) => planet.planetLevel >= minTargetLevel);
     for(const module of this.modules) {
       const result = await module.bind(this)(planet, inRange, state);
       if(result.action !== HandlerAction.NONE) {
@@ -346,12 +378,27 @@ class Plugin {
       );
       const energyRequired = Math.ceil(df.getEnergyNeededForMove(planet.locationId, target.planet.locationId, 1));
       
+      let myEnergy = planet.energy;
       const enoughSilver = (planet.silverGrowth == 0 && sendAmount <= planet.silver) || (planet.silverGrowth > 0 && planet.silver - sendAmount >= planet.silverCap * this.minSilverReserve);
-      const enoughEnergy = planet.energy - energyRequired >= planet.energyCap * this.minEnergyReserve;
+      const enoughEnergy = myEnergy - energyRequired >= planet.energyCap * this.minEnergyReserve;
       if(enoughSilver && enoughEnergy) {
         if(!this.dryRun) df.move(planet.locationId, target.planet.locationId, energyRequired, sendAmount);
         mySilver -= sendAmount;
+        myEnergy -= energyRequired;
         state.expectedSilver[target.planet.locationId] = (state.expectedSilver[target.planet.locationId] || 0) + sendAmount;
+        if(!state.arrivals[target.planet.locationId]) {
+          state.arrivals[target.planet.locationId] = [];
+        }
+        state.arrivals[target.planet.locationId].push({
+          player: this.player.address,
+          eventId: undefined as unknown as VoyageId,
+          fromPlanet: planet.locationId,
+          toPlanet: target.planet.locationId,
+          energyArriving: 1,
+          arrivalTime: 0,
+          departureTime: 0,
+          silverMoved: sendAmount,
+        });
         return {action: HandlerAction.ACTION, message: `Sending ${sendAmount} silver to ${getPlanetName(target.planet)}`};
       } else if(enoughSilver && !enoughEnergy) {
         const progress = planet.energy / (energyRequired + planet.energyCap * this.minEnergyReserve);
@@ -366,6 +413,7 @@ class Plugin {
     if(planet.planetType as number == PlanetType.ASTEROID_FIELD) {
       return {action: HandlerAction.NONE};
     }
+
     const maxSendAmount = Math.ceil(planet.energyCap * this.energySendAmount);
     const myScore = scorePlanetEnergyNeed(planet, planet.energy - maxSendAmount);
     const targets = inRange
@@ -394,6 +442,19 @@ class Plugin {
       if(myEnergy - target.sendAmount >= planet.energyCap * this.minEnergyReserve) {
         if(!this.dryRun) df.move(planet.locationId, target.planet.locationId, target.sendAmount, 0);
         state.incomingEnergy[target.planet.locationId] = (state.incomingEnergy[target.planet.locationId] || 0) + target.sendAmount;
+        if(!state.arrivals[target.planet.locationId]) {
+          state.arrivals[target.planet.locationId] = [];
+        }
+        state.arrivals[target.planet.locationId].push({
+          player: this.player.address,
+          eventId: undefined as unknown as VoyageId,
+          fromPlanet: planet.locationId,
+          toPlanet: target.planet.locationId,
+          energyArriving: target.sendAmount,
+          arrivalTime: 0,
+          departureTime: 0,
+          silverMoved: 0,
+        });
         myEnergy -= target.sendAmount;
         return {action: HandlerAction.ACTION, message: `Sending ${target.sendAmount} energy to ${getPlanetName(target.planet)}`};
       } else {
@@ -446,6 +507,19 @@ class Plugin {
       }
       if(planet.energy - target.sendEnergy >= planet.energyCap * this.minEnergyReserve) {
         state.incomingEnergy[target.planet.locationId] = (state.incomingEnergy[target.planet.locationId] || 0) + target.targetEnergy;
+        if(!state.arrivals[target.planet.locationId]) {
+          state.arrivals[target.planet.locationId] = [];
+        }
+        state.arrivals[target.planet.locationId].push({
+          player: this.player.address,
+          eventId: undefined as unknown as VoyageId,
+          fromPlanet: planet.locationId,
+          toPlanet: target.planet.locationId,
+          energyArriving: target.sendEnergy,
+          arrivalTime: 0,
+          departureTime: 0,
+          silverMoved: 0,
+        });
         if(!this.dryRun) df.move(planet.locationId, target.planet.locationId, target.sendEnergy, 0);
         return {action: HandlerAction.ACTION, message: `Capturing ${getPlanetName(target.planet)} with ${target.sendEnergy}`};
       } else {
