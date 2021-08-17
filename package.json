@@ -1,0 +1,21 @@
+{
+  "target": "ESNext",
+  "dependencies": {
+    "@types/rbush": "^3.0.0",
+    "htm": "^3.0.4",
+    "preact": "^10.5.13",
+    "rbush": "^3.0.1"
+  },
+  "devDependencies": {
+    "@darkforest_eth/hashing": "^6.1.27",
+    "@darkforest_eth/snarks": "^6.1.27",
+    "@darkforest_eth/types": "^6.1.23",
+    "@projectsophon/df-plugin-dev-server": "^1.1.0",
+    "@types/react": "^17.0.9",
+    "esbuild": "^0.12.8"
+  },
+  "scripts": {
+    "dev": "df-plugin-dev-server --dir entry",
+    "build": "esbuild entry/* --bundle --format=esm --target=es2020 --outdir=dist"
+  }
+}
