@@ -96,21 +96,25 @@ function scorePlanet(planet: Planet) {
   }
 
   const distanceToCenter = df.getDistCoords(location.coords, {x: 0, y: 0});
-  return (Math.pow(planet.energyCap, 2) * getPlanetScoreModifier(planet)) / Math.log(Math.max(distanceToCenter, 2));
+  return (Math.pow(planet.energyCap, 2) * getPlanetScoreModifier(planet)) / Math.max(distanceToCenter, 2);
 }
 
 function scorePlanetEnergyNeed(planet: Planet, energy?: number) {
   if(!energy) {
     energy = planet.energy;
   }
-  const baseNeed = Math.log(planet.energyCap - energy) * planet.range;
+  const baseNeed = planet.range;
   switch(planet.planetType as number) {
   case PlanetType.PLANET:
     return baseNeed;
   case PlanetType.QUASAR:
     return baseNeed * 1.25;
   case PlanetType.FOUNDRY:
-    return baseNeed * 1.25;
+    if(planet.hasTriedFindingArtifact) {
+      return baseNeed * 0.5;
+    } else {
+      return baseNeed * 1.25;
+    }
   default:
     return 0.0;
   }
@@ -376,7 +380,7 @@ class Plugin {
           )
         )
       );
-      const energyRequired = Math.ceil(df.getEnergyNeededForMove(planet.locationId, target.planet.locationId, 1));
+      const energyRequired = Math.ceil(df.getEnergyNeededForMove(planet.locationId, target.planet.locationId, 10));
       
       let myEnergy = planet.energy;
       const enoughSilver = (planet.silverGrowth == 0 && sendAmount <= planet.silver) || (planet.silverGrowth > 0 && planet.silver - sendAmount >= planet.silverCap * this.minSilverReserve);
