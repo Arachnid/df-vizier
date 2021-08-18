@@ -1,4 +1,4 @@
-import { Planet, Player, QueuedArrival, SpaceType, VoyageId, WorldLocation } from "@darkforest_eth/types";
+import { Artifact, Planet, Player, QueuedArrival, SpaceType, VoyageId, WorldLocation } from "@darkforest_eth/types";
 import GameManager from "@df/GameManager";
 import GameUIManager from "@df/GameUIManager";
 import RBush from "rbush";
@@ -106,9 +106,11 @@ function scorePlanetEnergyNeed(planet: Planet, energy?: number) {
   const baseNeed = planet.range;
   switch(planet.planetType as number) {
   case PlanetType.PLANET:
+  case PlanetType.SPACETIME_RIP:
+  case PlanetType.ASTEROID_FIELD:
     return baseNeed;
   case PlanetType.QUASAR:
-    return baseNeed * 1.25;
+    return 0 ; //baseNeed * 2;
   case PlanetType.FOUNDRY:
     if(planet.hasTriedFindingArtifact) {
       return baseNeed * 0.5;
@@ -124,8 +126,8 @@ function getPlanetSilverValue(planet: Planet): number {
   let rank = planet.upgradeState.reduce((a, b) => a + b);
 
   switch(planet.planetType as number) {
-  case PlanetType.SPACETIME_RIP:
-    return 10 + planet.planetLevel;
+  // case PlanetType.SPACETIME_RIP:
+  //   return 10 + planet.planetLevel;
   case PlanetType.PLANET:
     if(rank == maxPlanetRank(planet)) {
       return planet.planetLevel;
@@ -414,7 +416,7 @@ class Plugin {
   }
 
   sendEnergy(planet: Planet, inRange: Array<Planet>, state: RunState): HandlerResult {
-    if(planet.planetType as number == PlanetType.ASTEROID_FIELD) {
+    if(planet.planetType as number == PlanetType.ASTEROID_FIELD || planet.planetType as number == PlanetType.QUASAR) {
       return {action: HandlerAction.NONE};
     }
 
@@ -440,7 +442,10 @@ class Plugin {
 
     let myEnergy = planet.energy;
     for(const target of targets) {
-      if(target.score <= myScore || target.sendAmount <= 0) {
+      if(target.value <= myScore) {
+        break;
+      }
+      if(target.sendAmount <= 0) {
         continue;
       }
       if(myEnergy - target.sendAmount >= planet.energyCap * this.minEnergyReserve) {
