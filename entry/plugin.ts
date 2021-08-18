@@ -122,7 +122,7 @@ function scorePlanetEnergyNeed(planet: Planet, energy?: number) {
   }
 }
 
-function getPlanetSilverValue(planet: Planet): number {
+function getPlanetSilverScore(planet: Planet): number {
   let rank = planet.upgradeState.reduce((a, b) => a + b);
 
   switch(planet.planetType as number) {
@@ -348,7 +348,7 @@ class Plugin {
       }
     }
 
-    const mySilverValue = getPlanetSilverValue(planet);
+    const mySilverScore = getPlanetSilverScore(planet);
     const targets = inRange
       .filter((target) => 
         // Ours
@@ -360,38 +360,36 @@ class Plugin {
         // Not this same planet
         && target.locationId != planet.locationId)
       .map((target) => {
-        const value = getPlanetSilverValue(target);
-        return {planet: target, value: value};
+        const score = getPlanetSilverScore(target);
+        const capRemaining = target.silverCap - target.silver - (state.expectedSilver[target.locationId] || 0);
+        const sendAmount = Math.ceil(
+          Math.min(
+            capRemaining,
+            Math.max(
+              planet.silver - planet.silverCap * this.minSilverReserve,
+              planet.silverCap * this.silverSendAmount
+            )
+          )
+        );
+        const value = score * sendAmount;
+        return {planet: target, score, value, sendAmount};
       });
     targets.sort((a, b) => b.value - a.value);
 
     for(const target of targets) {
-      if(target.value <= mySilverValue) {
-        break;
-      }
-      const capRemaining = target.planet.silverCap - target.planet.silver - (state.expectedSilver[target.planet.locationId] || 0);
-      if(capRemaining <= 0) {
+      if(target.score <= mySilverScore || target.sendAmount <= 0) {
         continue;
       }
-      const sendAmount = Math.ceil(
-        Math.min(
-          capRemaining,
-          Math.max(
-            planet.silver - planet.silverCap * this.minSilverReserve,
-            planet.silverCap * this.silverSendAmount
-          )
-        )
-      );
       const energyRequired = Math.ceil(df.getEnergyNeededForMove(planet.locationId, target.planet.locationId, 10));
       
       let myEnergy = planet.energy;
-      const enoughSilver = (planet.silverGrowth == 0 && sendAmount <= planet.silver) || (planet.silverGrowth > 0 && planet.silver - sendAmount >= planet.silverCap * this.minSilverReserve);
+      const enoughSilver = (planet.silverGrowth == 0 && target.sendAmount <= planet.silver) || (planet.silverGrowth > 0 && planet.silver - sendAmount >= planet.silverCap * this.minSilverReserve);
       const enoughEnergy = myEnergy - energyRequired >= planet.energyCap * this.minEnergyReserve;
       if(enoughSilver && enoughEnergy) {
-        if(!this.dryRun) df.move(planet.locationId, target.planet.locationId, energyRequired, sendAmount);
-        mySilver -= sendAmount;
+        if(!this.dryRun) df.move(planet.locationId, target.planet.locationId, energyRequired, target.sendAmount);
+        mySilver -= target.sendAmount;
         myEnergy -= energyRequired;
-        state.expectedSilver[target.planet.locationId] = (state.expectedSilver[target.planet.locationId] || 0) + sendAmount;
+        state.expectedSilver[target.planet.locationId] = (state.expectedSilver[target.planet.locationId] || 0) + target.sendAmount;
         if(!state.arrivals[target.planet.locationId]) {
           state.arrivals[target.planet.locationId] = [];
         }
@@ -403,9 +401,9 @@ class Plugin {
           energyArriving: 1,
           arrivalTime: 0,
           departureTime: 0,
-          silverMoved: sendAmount,
+          silverMoved: target.sendAmount,
         });
-        return {action: HandlerAction.ACTION, message: `Sending ${sendAmount} silver to ${getPlanetName(target.planet)}`};
+        return {action: HandlerAction.ACTION, message: `Sending ${target.sendAmount} silver to ${getPlanetName(target.planet)}`};
       } else if(enoughSilver && !enoughEnergy) {
         const progress = planet.energy / (energyRequired + planet.energyCap * this.minEnergyReserve);
         return {action: HandlerAction.WAIT, progress: progress, message: ` energy to send silver to ${getPlanetName(target.planet)}`};
