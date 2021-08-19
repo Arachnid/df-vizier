@@ -120,7 +120,9 @@ class Plugin {
         }
         const action = await this.runOne(planet, context);
         results.push({ planet, action });
-        log(`${getPlanetName(planet, false)}: ${action.getMessage(false)}`);
+        if(action.progress == 1.0) {
+          log(`${getPlanetName(planet, false)}: ${action.getMessage(false)}`);
+        }
       }
       results.sort((a, b) => b.action.progress - a.action.progress);
 

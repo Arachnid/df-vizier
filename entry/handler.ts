@@ -162,15 +162,15 @@ export class Move implements HandlerAction {
 
     execute(df: GameManager, context: Context) {
         const { from, to, sendEnergy, sendSilver } = this;
-        const energyArriving = df.getEnergyArrivingForMove(from.locationId, to.locationId, undefined, sendEnergy);
+        const energyArriving = Math.floor(df.getEnergyArrivingForMove(from.locationId, to.locationId, undefined, sendEnergy));
         context.updateIncoming(to.locationId, from.owner, energyArriving, sendSilver);
-        df.move(from.locationId, to.locationId, sendEnergy, sendSilver);
+        df.move(from.locationId, to.locationId, Math.floor(sendEnergy), Math.floor(sendSilver));
         return false;
     }
 
     getMessage(html: boolean) {
         const { from, to, sendEnergy, sendSilver } = this;
-        const energyArriving = df.getEnergyArrivingForMove(from.locationId, to.locationId, undefined, sendEnergy);
+        const energyArriving = Math.floor(df.getEnergyArrivingForMove(from.locationId, to.locationId, undefined, sendEnergy));
 
         let amounts: string;
         if (this.sendSilver > 0) {
