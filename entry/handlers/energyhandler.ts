@@ -36,7 +36,7 @@ export class EnergyHandler implements ActionHandler<typeof options> {
     readonly options = options;
 
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
-        if (planet.planetType == PlanetType.SILVER_MINE || planet.planetType as number == PlanetType.SILVER_BANK) {
+        if (planet.planetType == PlanetType.SILVER_MINE) {
             return new NoAction();
         }
 

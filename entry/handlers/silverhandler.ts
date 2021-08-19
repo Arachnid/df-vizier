@@ -38,9 +38,6 @@ export class SilverHandler implements ActionHandler<typeof options> {
     readonly options = options;
 
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
-        if (planet.planetType == PlanetType.SILVER_BANK) {
-            return new NoAction();
-        }
         let mySilver = planet.silver;
         const rank = planet.upgradeState.reduce((a, b) => a + b);
         if (planet.planetType as number == PlanetType.PLANET && planet.planetLevel > 0 && rank < maxPlanetRank(planet)) {

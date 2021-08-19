@@ -21,10 +21,6 @@ export class AttackHandler implements ActionHandler<typeof options> {
     readonly options = options;
 
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
-        if (planet.planetType == PlanetType.SILVER_BANK) {
-            return new NoAction();
-        }
-
         const player = (df.getPlayer() as Player).address;
         if (!Object.entries(context.incomingSends[planet.locationId] || {}).every(([a]) => a == player)) {
             return new NoAction();
