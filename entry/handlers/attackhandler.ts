@@ -1,6 +1,8 @@
 import { Planet, PlanetType, Player } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
-import { ActionHandler, ConfigType, Context, HandlerAction, Move, NoAction, Percentage, Wait } from "entry/handler";
+import { ActionHandler, Context } from "../handler";
+import { ConfigType, Percentage } from "../config";
+import { HandlerAction, Move, NoAction, Wait } from "../actions";
 import { scorePlanet } from "../utils";
 
 declare const df: GameManager;
@@ -8,8 +10,6 @@ declare const df: GameManager;
 const NO_OWNER = '0x0000000000000000000000000000000000000000';
 
 const options = {
-    energySendAmount: new Percentage(0.7),
-    minEnergyReserve: new Percentage(0.15),
     minCaptureEnergy: new Percentage(0.05),
     partialCaptureAmount: new Percentage(0.7),
     minPartialCapture: new Percentage(0.05),
@@ -26,7 +26,7 @@ export class AttackHandler implements ActionHandler<typeof options> {
             return new NoAction();
         }
 
-        const maxSend = planet.energyCap * (1.0 - config.minEnergyReserve);
+        const maxSend = planet.energyCap * (1.0 - config.global.minEnergyReserve);
 
         const targets = context.inRange
             .filter((target) =>
@@ -61,10 +61,10 @@ export class AttackHandler implements ActionHandler<typeof options> {
                 continue;
             }
             const move = new Move(planet, target.planet, target.sendEnergy, 0);
-            if (planet.energy - target.sendEnergy >= planet.energyCap * config.minEnergyReserve) {
+            if (planet.energy - target.sendEnergy >= planet.energyCap * config.global.minEnergyReserve) {
                 return move;
             } else {
-                const progress = planet.energy / (target.sendEnergy + planet.energyCap * config.minEnergyReserve);
+                const progress = planet.energy / (target.sendEnergy + planet.energyCap * config.global.minEnergyReserve);
                 return new Wait(progress, move);
             }
         }

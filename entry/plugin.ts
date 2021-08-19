@@ -2,7 +2,9 @@ import { Planet, Player, WorldLocation } from "@darkforest_eth/types";
 import GameManager from "@df/GameManager";
 import GameUIManager from "@df/GameUIManager";
 import RBush from "rbush";
-import { ActionHandler, ConfigType, ConfigurationOptions, Context, defaultValues, HandlerAction, NoAction } from "./handler";
+import { ActionHandler, Context } from "./handler";
+import { ConfigType, ConfigurationOptions, defaultValues, globalConfig, GlobalConfig } from "./config";
+import { HandlerAction, NoAction } from "./actions";
 import { ArtifactsHandler, AttackHandler, EnergyHandler, SilverHandler } from "./handlers";
 import { getPlanetName, scorePlanet } from "./utils";
 
@@ -38,12 +40,7 @@ interface HandlerInfo<T extends ConfigurationOptions> {
 }
 
 class Plugin {
-  readonly dryRun = false;
-  readonly runInterval = 60000;
-  readonly minEnergyReserve = 0.15;
-  readonly minCaptureLevel = 1; // Relative to max level
-  readonly minActionLevel = 2; // Relative to max level
-
+  config: GlobalConfig;
   timeout: ReturnType<typeof setTimeout>;
   handlers: Array<HandlerInfo<any>> = [];
   player: Player;
@@ -51,6 +48,7 @@ class Plugin {
   planets: RBush<PlanetEntry>;
 
   constructor() {
+    this.config = Object.fromEntries(Object.entries(globalConfig).map(([key, value]) => [key, value.defaultValue])) as GlobalConfig;
     this.addHandler(new ArtifactsHandler());
     this.addHandler(new SilverHandler());
     this.addHandler(new EnergyHandler());
@@ -61,7 +59,7 @@ class Plugin {
   addHandler<T extends ConfigurationOptions>(handler: ActionHandler<T>) {
     this.handlers.push({
       handler,
-      config: defaultValues(handler.options),
+      config: defaultValues(handler.options, this.config),
     })
   }
 
@@ -115,7 +113,7 @@ class Plugin {
 
       const results: Array<{ planet: Planet, action: HandlerAction }> = [];
       for (const planet of myPlanets) {
-        if (planet.planetLevel + this.minActionLevel < context.maxLevel) {
+        if (planet.planetLevel + this.config.minActionLevel < context.maxLevel) {
           continue;
         }
         const action = await this.runOne(planet, context);
@@ -146,21 +144,21 @@ class Plugin {
       }
     }
 
-    this.timeout = setTimeout(this.run.bind(this), this.runInterval);
+    this.timeout = setTimeout(this.run.bind(this), this.config.runInterval);
   }
 
   async runOne(planet: Planet, context: Context): Promise<HandlerAction> {
-    const minTargetLevel = context.maxLevel - this.minCaptureLevel;
+    const minTargetLevel = context.maxLevel - this.config.minCaptureLevel;
     // const inRange = df.getPlanetsInRange(planet.locationId, 100 * (1 - this.minEnergyReserve)).filter((planet) => planet.planetLevel >= minTargetLevel);
     const location = df.getLocationOfPlanet(planet.locationId) as WorldLocation;
-    const range = df.getMaxMoveDist(planet.locationId, 100 * (1 - this.minEnergyReserve));
+    const range = df.getMaxMoveDist(planet.locationId, 100 * (1 - this.config.minEnergyReserve));
     const inRange = this.planets.search({ minX: location.coords.x - range, minY: location.coords.y - range, maxX: location.coords.x + range, maxY: location.coords.y + range })
       .map((entry) => entry.planet)
       .filter((planet) => planet.planetLevel >= minTargetLevel);
     context.inRange = inRange;
     for (const { handler, config } of this.handlers) {
       const action = handler.run(planet, config, context);
-      if (!this.dryRun) {
+      if (!this.config.dryRun) {
         action.execute(df, context);
       }
       if (!action.continue) {

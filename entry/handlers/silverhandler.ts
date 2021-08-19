@@ -1,6 +1,8 @@
 import { Planet, PlanetType, Player } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
-import { ActionHandler, ConfigType, Context, HandlerAction, Move, NoAction, NumberOption, Percentage, Upgrade, Wait } from "entry/handler";
+import { ActionHandler, Context } from "../handler";
+import { ConfigType, NumberOption, Percentage } from "../config";
+import { HandlerAction, Move, NoAction, Upgrade, Wait } from "../actions";
 import { maxPlanetRank } from "../utils";
 
 declare const df: GameManager;
@@ -8,7 +10,6 @@ declare const df: GameManager;
 const options = {
     silverSendAmount: new Percentage(0.7),
     minSilverReserve: new Percentage(0.15),
-    minEnergyReserve: new Percentage(0.15),
     upgradeBranch: new NumberOption(1),
     secondaryUpgradeBranch: new NumberOption(2),
 };
@@ -88,14 +89,14 @@ export class SilverHandler implements ActionHandler<typeof options> {
 
             let myEnergy = planet.energy;
             const enoughSilver = (planet.silverGrowth == 0 && target.sendAmount <= planet.silver) || (planet.silverGrowth > 0 && planet.silver - target.sendAmount >= planet.silverCap * config.minSilverReserve);
-            const enoughEnergy = myEnergy - energyRequired >= planet.energyCap * config.minEnergyReserve;
+            const enoughEnergy = myEnergy - energyRequired >= planet.energyCap * config.global.minEnergyReserve;
             const move = new Move(planet, target.planet, energyRequired, target.sendAmount);
             if (enoughSilver && enoughEnergy) {
                 mySilver -= target.sendAmount;
                 myEnergy -= energyRequired;
                 return move;
             } else if (enoughSilver && !enoughEnergy) {
-                const progress = planet.energy / (energyRequired + planet.energyCap * config.minEnergyReserve);
+                const progress = planet.energy / (energyRequired + planet.energyCap * config.global.minEnergyReserve);
                 return new Wait(progress, move);
             }
         }

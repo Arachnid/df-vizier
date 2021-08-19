@@ -1,6 +1,8 @@
 import { Planet, PlanetType, Player } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
-import { ActionHandler, ConfigType, Context, HandlerAction, Move, NoAction, Percentage, Wait } from "entry/handler";
+import { ActionHandler, Context } from "../handler";
+import { ConfigType, Percentage } from "../config";
+import { HandlerAction, Move, NoAction, Wait } from "../actions";
 
 declare const df: GameManager;
 
@@ -28,8 +30,6 @@ function scorePlanetEnergyNeed(planet: Planet, energy?: number) {
 }
 
 const options = {
-    energySendAmount: new Percentage(0.7),
-    minEnergyReserve: new Percentage(0.15),
 };
 
 export class EnergyHandler implements ActionHandler<typeof options> {
@@ -40,7 +40,7 @@ export class EnergyHandler implements ActionHandler<typeof options> {
             return new NoAction();
         }
 
-        const maxSendAmount = Math.ceil(planet.energyCap * config.energySendAmount);
+        const maxSendAmount = Math.ceil(planet.energyCap * config.global.energySendAmount);
         const myScore = scorePlanetEnergyNeed(planet, planet.energy - maxSendAmount);
         const player = (df.getPlayer() as Player).address;
         const targets = context.inRange
@@ -55,7 +55,7 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                 && target.locationId != planet.locationId)
             .map((target) => {
                 const score = scorePlanetEnergyNeed(target);
-                const sendAmount = Math.ceil(Math.min(maxSendAmount, target.energyCap * (1 - config.minEnergyReserve) - target.energy - (context.incomingEnergy[target.locationId] || 0)));
+                const sendAmount = Math.ceil(Math.min(maxSendAmount, target.energyCap * (1 - config.global.minEnergyReserve) - target.energy - (context.incomingEnergy[target.locationId] || 0)));
                 const value = score * (df.getEnergyArrivingForMove(planet.locationId, target.locationId, undefined, sendAmount) / sendAmount);
                 return { planet: target, score, value, sendAmount };
             });
@@ -70,11 +70,11 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                 continue;
             }
             const move = new Move(planet, target.planet, target.sendAmount, 0);
-            if (myEnergy - target.sendAmount >= planet.energyCap * config.minEnergyReserve) {
+            if (myEnergy - target.sendAmount >= planet.energyCap * config.global.minEnergyReserve) {
                 myEnergy -= target.sendAmount;
                 return move;
             } else {
-                const progress = planet.energy / (target.sendAmount + planet.energyCap * config.minEnergyReserve);
+                const progress = planet.energy / (target.sendAmount + planet.energyCap * config.global.minEnergyReserve);
                 return new Wait(progress, move);
             }
         }

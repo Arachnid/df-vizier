@@ -1,6 +1,8 @@
 import { Planet } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
-import { ActionHandler, ConfigType, Context, FindArtifact, HandlerAction, NoAction, ProspectPlanet, Wait } from "entry/handler";
+import { ActionHandler, Context } from "../handler";
+import { ConfigType } from "../config";
+import { FindArtifact, HandlerAction, NoAction, ProspectPlanet, Wait } from "../actions";
 
 declare const df: GameManager;
 
