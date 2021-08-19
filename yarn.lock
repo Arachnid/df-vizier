@@ -2,25 +2,26 @@
 # yarn lockfile v1
 
 
-"@darkforest_eth/hashing@^6.1.27":
-  version "6.1.27"
-  resolved "https://registry.yarnpkg.com/@darkforest_eth/hashing/-/hashing-6.1.27.tgz#02408b938040d70d91393420ae0f770b5bcfd3e4"
-  integrity sha512-uE1nlrRXXqrZNKwMFLYIKDxJVmtWdv/hrG1AejJ9XIsgCAZL1uDOxfdHSGCez2Ew08JelUmMfKqG7FwYG/fpgg==
+"@darkforest_eth/hashing@^6.5.5":
+  version "6.5.5"
+  resolved "https://registry.yarnpkg.com/@darkforest_eth/hashing/-/hashing-6.5.5.tgz#ac7c57593756a2be7cc448419901cc1049c6d65c"
+  integrity sha512-c2dFNB9ID/DQ/GthWVzU5T69N4WYn9TSXxgPlqS4yulrU479gXIzPcvxvb8YrYfOkUV5+2We1nJBzRgbBPmk9w==
   dependencies:
     big-integer "^1.6.48"
 
-"@darkforest_eth/snarks@^6.1.27":
-  version "6.1.27"
-  resolved "https://registry.yarnpkg.com/@darkforest_eth/snarks/-/snarks-6.1.27.tgz#b566b78aaadad5390e47423cdfadc42eea7d79b7"
-  integrity sha512-TqteoKgs3iKDZbDtijW0f95OCiqweNpfm49GJ2VR8FU/dLUKReSOjHnKVepjd1n5gnRnyhNOcqsrxeZID/3dew==
+"@darkforest_eth/snarks@^6.5.5":
+  version "6.5.5"
+  resolved "https://registry.yarnpkg.com/@darkforest_eth/snarks/-/snarks-6.5.5.tgz#67eff944da5058afdd752da3e59ec7dd45b647e7"
+  integrity sha512-0kZ/p4TkRX9xAkW7a+QNeWTNBe7hIpA/y9u05priImL1HPqY343Rf/I/t+dpVzNiob6esXTR/vJS0jYco25boA==
 
-"@darkforest_eth/types@^6.1.23":
-  version "6.1.23"
-  resolved "https://registry.yarnpkg.com/@darkforest_eth/types/-/types-6.1.23.tgz#14b2c382a4a0a421212ea430287883c7eb8cded8"
-  integrity sha512-jv6n0l9vdiR6NqASHHLzwzD/gL4EiVc3QuJy3Mj20GMRy1d6FhefxKMSlldr/ypas1Li4RZNKqmUo24PHBE7pg==
+"@darkforest_eth/types@^6.5.5":
+  version "6.5.5"
+  resolved "https://registry.yarnpkg.com/@darkforest_eth/types/-/types-6.5.5.tgz#b7141375afcfdd577b147e0371149c49f89479bc"
+  integrity sha512-CZk6ufXJDQISCz5oJhqCY9HPisiH+6zjfRsroMfPnbzuA2yQZajTsJLNRaj+PrBPROJIqaTPnKGo0Wqnl5UbTw==
   dependencies:
     big-integer "^1.6.48"
     ethers "^5.0.7"
+    ts-toolbelt "^9.6.0"
 
 "@ethersproject/abi@5.3.0", "@ethersproject/abi@^5.3.0":
   version "5.3.0"
@@ -646,6 +647,11 @@ supports-color@^7.1.0:
   integrity sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==
   dependencies:
     has-flag "^4.0.0"
+
+ts-toolbelt@^9.6.0:
+  version "9.6.0"
+  resolved "https://registry.yarnpkg.com/ts-toolbelt/-/ts-toolbelt-9.6.0.tgz#50a25426cfed500d4a09bd1b3afb6f28879edfd5"
+  integrity sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==
 
 wrap-ansi@^7.0.0:
   version "7.0.0"

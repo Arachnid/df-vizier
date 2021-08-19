@@ -7,9 +7,9 @@
     "rbush": "^3.0.1"
   },
   "devDependencies": {
-    "@darkforest_eth/hashing": "^6.1.27",
-    "@darkforest_eth/snarks": "^6.1.27",
-    "@darkforest_eth/types": "^6.1.23",
+    "@darkforest_eth/hashing": "^6.5.5",
+    "@darkforest_eth/snarks": "^6.5.5",
+    "@darkforest_eth/types": "^6.5.5",
     "@projectsophon/df-plugin-dev-server": "^1.1.0",
     "@types/react": "^17.0.9",
     "esbuild": "^0.12.8"
