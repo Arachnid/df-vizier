@@ -1,5 +1,7 @@
 import { Planet, PlanetType, SpaceType } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
+import { html } from 'htm/preact';
+import { isValidElement, toChildArray, VNode } from "preact";
 
 declare const df: GameManager;
 
@@ -14,13 +16,18 @@ export function maxPlanetRank(planet: Planet): number {
     }
 }
 
-export function getPlanetName(planet: Planet, html: boolean = true): string {
+export function getPlanetName(planet: Planet) {
     const rank = planet.upgradeState.reduce((a, b) => a + b);
-    const name = `${df.getProcgenUtils().getPlanetName(planet)} (L${planet.planetLevel}R${rank})`;
-    if (html) {
-        return `<a href="javascript:ui.setSelectedId('${planet.locationId}')">${name}`;
+    return html`<a href="javascript:ui.setSelectedId('${planet.locationId}')">
+        ${df.getProcgenUtils().getPlanetName(planet)} (L${planet.planetLevel}R${rank})
+    </a>`;
+}
+
+export function stripTags(node: VNode|string|number): string {
+    if(isValidElement(node)) {
+        return toChildArray(node.props.children).map(stripTags).join('');
     } else {
-        return name;
+        return node.toString();
     }
 }
 

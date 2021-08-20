@@ -15,10 +15,10 @@ export class ArtifactsHandler implements ActionHandler<typeof options> {
 
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
         if (!df.isPlanetMineable(planet) || planet.unconfirmedProspectPlanet || planet.unconfirmedFindArtifact) {
-            return new NoAction();
+            return new NoAction(planet);
         }
         if (planet.prospectedBlockNumber === undefined) {
-            const prospect = new ProspectPlanet(planet.locationId);
+            const prospect = new ProspectPlanet(planet);
             if (planet.energy >= planet.energyCap * 0.95) {
                 return prospect;
             } else {
@@ -28,8 +28,8 @@ export class ArtifactsHandler implements ActionHandler<typeof options> {
         }
         const currentBlockNumber = df.contractsAPI.ethConnection.blockNumber;
         if (!planet.hasTriedFindingArtifact && !planet.unconfirmedFindArtifact && currentBlockNumber - planet.prospectedBlockNumber < 256) {
-            return new FindArtifact(planet.locationId);
+            return new FindArtifact(planet);
         }
-        return new NoAction();
+        return new NoAction(planet);
     }
 }

@@ -37,7 +37,7 @@ export class EnergyHandler implements ActionHandler<typeof options> {
 
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
         if (planet.planetType == PlanetType.SILVER_MINE) {
-            return new NoAction();
+            return new NoAction(planet);
         }
 
         const maxSendAmount = Math.ceil(planet.energyCap * config.global.energySendAmount);
@@ -78,6 +78,6 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                 return new Wait(progress, move);
             }
         }
-        return new NoAction();
+        return new NoAction(planet);
     }
 }

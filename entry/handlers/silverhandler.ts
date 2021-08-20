@@ -42,13 +42,13 @@ export class SilverHandler implements ActionHandler<typeof options> {
         let mySilver = planet.silver;
         const rank = planet.upgradeState.reduce((a, b) => a + b);
         if (planet.planetType as number == PlanetType.PLANET && planet.planetLevel > 0 && rank < maxPlanetRank(planet)) {
-            const upgrade = new Upgrade(planet.locationId, rank == maxPlanetRank(planet) ? config.secondaryUpgradeBranch : config.upgradeBranch);
+            const upgrade = new Upgrade(planet, rank == maxPlanetRank(planet) ? config.secondaryUpgradeBranch : config.upgradeBranch);
             if (mySilver >= getSilverNeeded(planet)) {
                 mySilver -= getSilverNeeded(planet);
                 return upgrade;
             } else {
                 // Wait for more silver, but we can do other things in the meantime.
-                return new NoAction();
+                return new NoAction(planet);
             }
         }
 
@@ -100,6 +100,6 @@ export class SilverHandler implements ActionHandler<typeof options> {
                 return new Wait(progress, move);
             }
         }
-        return new NoAction();
+        return new NoAction(planet);
     }
 }

@@ -2,25 +2,34 @@ import { LocationId, Planet } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
 import { getPlanetName } from "./utils";
 import { Context } from "./handler";
+import { html } from "htm/preact";
+import { VNode } from "preact";
 
 declare const df: GameManager;
 
 export interface HandlerAction {
     readonly continue: boolean;
     readonly progress: number;
+    readonly planet: Planet;
+    
     execute(df: GameManager, context: Context): void;
-    getMessage(html: boolean): string;
+    getMessage(): VNode;
 }
 
 export class NoAction implements HandlerAction {
     readonly progress = 0;
     readonly continue = true;
+    readonly planet: Planet;
+
+    constructor(planet: Planet) {
+        this.planet = planet;
+    }
 
     execute(df: GameManager, context: Context) {
     }
 
-    getMessage(html: boolean) {
-        return "Nothing to do.";
+    getMessage() {
+        return html`Nothing to do.`;
     }
 }
 
@@ -34,109 +43,113 @@ export class Wait implements HandlerAction {
         this.action = action;
     }
 
+    get planet() {
+        return this.action.planet;
+    }
+
     execute(df: GameManager, context: Context) {
     }
 
-    getMessage(html: boolean) {
-        return this.action.getMessage(html);
+    getMessage() {
+        return this.action.getMessage();
     }
 }
 
 export class ProspectPlanet implements HandlerAction {
     readonly progress = 1.0;
     readonly continue = false;
-    readonly locationId: LocationId;
+    readonly planet: Planet;
 
-    constructor(locationId: LocationId) {
-        this.locationId = locationId;
+    constructor(planet: Planet) {
+        this.planet = planet;
     }
 
     execute(df: GameManager, context: Context) {
-        df.prospectPlanet(this.locationId);
+        df.prospectPlanet(this.planet.locationId);
     }
 
-    getMessage(html: boolean) {
-        return "Prospecting";
+    getMessage() {
+        return html`Prospecting`;
     }
 }
 
 export class FindArtifact implements HandlerAction {
     readonly progress = 1.0;
     readonly continue = false;
-    readonly locationId: LocationId;
+    readonly planet: Planet;
 
-    constructor(locationId: LocationId) {
-        this.locationId = locationId;
+    constructor(planet: Planet) {
+        this.planet = planet;
     }
 
     execute(df: GameManager, context: Context) {
-        df.findArtifact(this.locationId);
+        df.findArtifact(this.planet.locationId);
         return false;
     }
 
-    getMessage(html: boolean) {
-        return "Finding Artifact";
+    getMessage() {
+        return html`Finding Artifact`;
     }
 }
 
 export class Upgrade implements HandlerAction {
     readonly progress = 1.0;
     readonly continue = false;
-    readonly locationId: LocationId;
+    readonly planet: Planet;
     readonly branch: number;
 
-    constructor(locationId: LocationId, branch: number) {
-        this.locationId = locationId;
+    constructor(planet: Planet, branch: number) {
+        this.planet = planet;
         this.branch = branch;
     }
 
     execute(df: GameManager, context: Context) {
-        df.upgrade(this.locationId, this.branch);
+        df.upgrade(this.planet.locationId, this.branch);
         return false;
     }
 
-    getMessage(html: boolean) {
-        return "Upgrading";
+    getMessage() {
+        return html`Upgrading`;
     }
 }
 
 export class Move implements HandlerAction {
     readonly progress = 1.0;
     readonly continue = false;
-    readonly from: Planet;
+    readonly planet: Planet;
     readonly to: Planet;
     readonly sendEnergy: number;
     readonly sendSilver: number;
 
-    constructor(from: Planet, to: Planet, sendEnergy: number, sendSilver: number) {
-        this.from = from;
+    constructor(planet: Planet, to: Planet, sendEnergy: number, sendSilver: number) {
+        this.planet = planet;
         this.to = to;
         this.sendEnergy = sendEnergy;
         this.sendSilver = sendSilver;
     }
 
     execute(df: GameManager, context: Context) {
-        const { from, to, sendEnergy, sendSilver } = this;
-        const energyArriving = Math.floor(df.getEnergyArrivingForMove(from.locationId, to.locationId, undefined, sendEnergy));
-        context.updateIncoming(to.locationId, from.owner, energyArriving, sendSilver);
-        df.move(from.locationId, to.locationId, Math.floor(sendEnergy), Math.floor(sendSilver));
+        const { planet, to, sendEnergy, sendSilver } = this;
+        const energyArriving = Math.floor(df.getEnergyArrivingForMove(planet.locationId, to.locationId, undefined, sendEnergy));
+        context.updateIncoming(to.locationId, planet.owner, energyArriving, sendSilver);
+        df.move(planet.locationId, to.locationId, Math.floor(sendEnergy), Math.floor(sendSilver));
         return false;
     }
 
-    getMessage(html: boolean) {
-        const { from, to, sendEnergy, sendSilver } = this;
-        const energyArriving = Math.floor(df.getEnergyArrivingForMove(from.locationId, to.locationId, undefined, sendEnergy));
+    getMessage() {
+        const { planet, to, sendEnergy, sendSilver } = this;
+        const energyArriving = Math.floor(df.getEnergyArrivingForMove(planet.locationId, to.locationId, undefined, sendEnergy));
 
-        let amounts: string;
+        let amounts: VNode;
         if (this.sendSilver > 0) {
-            amounts = `${energyArriving} energy and ${sendSilver} silver`;
+            amounts = html`${energyArriving} energy and ${sendSilver} silver`;
         } else {
-            amounts = `${energyArriving} energy`;
+            amounts = html`${energyArriving} energy`;
         }
-        if (this.from.owner == this.to.owner) {
-            return `Sending ${amounts} to ${getPlanetName(to, html)}`;
+        if (this.planet.owner == this.to.owner) {
+            return html`Sending ${amounts} to ${getPlanetName(to)}`;
         } else {
-            return `Attacking ${getPlanetName(to, html)} with ${amounts}`;
+            return html`Attacking ${getPlanetName(to)} with ${amounts}`;
         }
     }
 }

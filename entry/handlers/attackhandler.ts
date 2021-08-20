@@ -23,7 +23,7 @@ export class AttackHandler implements ActionHandler<typeof options> {
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
         const player = (df.getPlayer() as Player).address;
         if (!Object.entries(context.incomingSends[planet.locationId] || {}).every(([a]) => a == player)) {
-            return new NoAction();
+            return new NoAction(planet);
         }
 
         const maxSend = planet.energyCap * (1.0 - config.global.minEnergyReserve);
@@ -68,6 +68,6 @@ export class AttackHandler implements ActionHandler<typeof options> {
                 return new Wait(progress, move);
             }
         }
-        return new NoAction();
+        return new NoAction(planet);
     }
 }
