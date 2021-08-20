@@ -3,7 +3,7 @@
   "dependencies": {
     "@types/rbush": "^3.0.0",
     "htm": "^3.0.4",
-    "preact": "^10.5.13",
+    "preact": "^10.5.14",
     "rbush": "^3.0.1"
   },
   "devDependencies": {
@@ -11,7 +11,6 @@
     "@darkforest_eth/snarks": "^6.5.5",
     "@darkforest_eth/types": "^6.5.5",
     "@projectsophon/df-plugin-dev-server": "^1.1.0",
-    "@types/react": "^17.0.9",
     "esbuild": "^0.12.8"
   },
   "scripts": {

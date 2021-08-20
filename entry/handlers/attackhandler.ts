@@ -14,7 +14,7 @@ const options = {
     partialCaptureAmount: new Percentage(0.7),
     minPartialCapture: new Percentage(0.05),
     bigPirateModifier: new Percentage(0.8),
-    bigEnemyModifier: new Percentage(0.2),
+    bigEnemyModifier: new Percentage(0.1),
 };
 
 export class AttackHandler implements ActionHandler<typeof options> {
@@ -41,17 +41,17 @@ export class AttackHandler implements ActionHandler<typeof options> {
             .map((target) => {
                 let targetEnergy = target.energyCap * config.minCaptureEnergy + (target.energy - (context.incomingEnergy[target.locationId] || 0)) * (target.defense / 100.0);
                 let sendEnergy = Math.ceil(df.getEnergyNeededForMove(planet.locationId, target.locationId, targetEnergy));
-                const score = scorePlanet(target);
-                let value = score / sendEnergy;
+                let score = scorePlanet(target);
                 if (sendEnergy > maxSend) {
                     sendEnergy = Math.ceil(planet.energyCap * config.partialCaptureAmount);
                     targetEnergy = df.getEnergyArrivingForMove(planet.locationId, target.locationId, undefined, sendEnergy);
                     if (target.owner === NO_OWNER) {
-                        value *= config.bigPirateModifier;
+                        score *= config.bigPirateModifier;
                     } else {
-                        value *= config.bigEnemyModifier;
+                        score *= config.bigEnemyModifier;
                     }
                 }
+                let value = score / sendEnergy;
                 return { planet: target, targetEnergy, sendEnergy, score, value };
             });
         targets.sort((a, b) => b.value - a.value);

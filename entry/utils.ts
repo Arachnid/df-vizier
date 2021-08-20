@@ -37,7 +37,7 @@ function getPlanetScoreModifier(planet: Planet): number {
         case PlanetType.TRADING_POST:
             return 0.5;
         case PlanetType.SILVER_MINE:
-            return 0.8;
+            return 0.5;
         case PlanetType.SILVER_BANK:
             return 0.5;
         default:
@@ -54,5 +54,6 @@ export function scorePlanet(planet: Planet) {
     }
 
     const distanceToCenter = df.getDistCoords(location.coords, { x: 0, y: 0 });
-    return (Math.pow(planet.energyCap, 2) * planet.planetLevel * getPlanetScoreModifier(planet)) - Math.pow(distanceToCenter, 2);
+    // return (Math.pow(planet.energyCap, 2) * planet.planetLevel * getPlanetScoreModifier(planet)) - Math.pow(distanceToCenter, 2);
+    return Math.pow(planet.planetLevel, 2) * getPlanetScoreModifier(planet) / Math.log(distanceToCenter);
 }

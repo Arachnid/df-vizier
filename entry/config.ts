@@ -51,7 +51,7 @@ export const globalConfig = {
     minEnergyReserve: new Percentage(0.15),
     dryRun: new BoolOption(false),
     runInterval: new NumberOption(60000),
-    minCaptureLevel: new RelativeLevel(1),
+    minCaptureLevel: new RelativeLevel(0),
     minActionLevel: new RelativeLevel(2),
 };
 
