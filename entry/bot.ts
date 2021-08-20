@@ -5,6 +5,7 @@ import { ConfigType, ConfigurationOptions, defaultValues, globalConfig, GlobalCo
 import { HandlerAction, NoAction } from "./actions";
 import { getPlanetName, scorePlanet, stripTags } from "./utils";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
+import { monomitter, Monomitter } from "@darkforest_eth/events";
 
 export declare const df: GameManager;
 
@@ -31,6 +32,8 @@ export class Bot {
   player: Player;
   table?: HTMLTableElement;
   planets: RBush<PlanetEntry>;
+  actionsUpdated$: Monomitter<Array<HandlerAction>> = monomitter(true);
+  interval?: ReturnType<typeof setInterval>;
 
   constructor(handlers: Array<ActionHandler<any>>, planets: Iterable<Planet>, player: Player) {
     this.config = Object.fromEntries(Object.entries(globalConfig).map(([key, value]) => [key, value.defaultValue])) as GlobalConfig;
@@ -40,6 +43,23 @@ export class Bot {
     this.planets = new RBush<PlanetEntry>();
     this.buildPlanetIndex(planets, 3);
     this.player = player;
+  }
+
+  start() {
+    async function runOnce() {
+      const actions = await this.run();
+      if(actions !== null) {
+        this.actionsUpdated$.publish(actions);
+      }
+      this.interval = setTimeout(runOnce.bind(this), this.config.runInterval);
+    }
+    setTimeout(runOnce.bind(this), 0);
+  }
+
+  stop() {
+    if(this.interval) {
+      clearTimeout(this.interval);
+    }
   }
 
   addHandler<T extends ConfigurationOptions>(handler: ActionHandler<T>) {

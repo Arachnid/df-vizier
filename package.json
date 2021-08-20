@@ -1,6 +1,7 @@
 {
   "target": "ESNext",
   "dependencies": {
+    "@darkforest_eth/events": "^6.5.5",
     "@types/rbush": "^3.0.0",
     "htm": "^3.1.0",
     "preact": "^10.5.14",

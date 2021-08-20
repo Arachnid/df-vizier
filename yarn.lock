@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@darkforest_eth/events@^6.5.5":
+  version "6.5.5"
+  resolved "https://registry.yarnpkg.com/@darkforest_eth/events/-/events-6.5.5.tgz#b28c93d90e9709c7cb7202b3e4f9de56b55e7bd5"
+  integrity sha512-P2TqjCKY6v/DF4Of4/a3S3hMnNQDWVjHJyuBbQhiqgK2nN5MCQeN5KUsOzoRy0vXk2Anj2gsAPlY9LytRRDWcw==
+
 "@darkforest_eth/hashing@^6.5.5":
   version "6.5.5"
   resolved "https://registry.yarnpkg.com/@darkforest_eth/hashing/-/hashing-6.5.5.tgz#ac7c57593756a2be7cc448419901cc1049c6d65c"

@@ -1,27 +1,17 @@
-import { HandlerAction } from "./actions";
 import { VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { html } from 'htm/preact';
+import { HandlerAction } from "./actions";
 import { Bot } from "./bot";
 import { getPlanetName } from "./utils";
-import { html } from 'htm/preact';
+import { DebugHelper } from "./debughelper";
 
 export function App({ bot }: { bot: Bot; }) {
   const [actions, setActions] = useState(null as Array<HandlerAction> | null);
 
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | undefined = undefined;
-    async function runOnce() {
-      const results = await bot.run();
-      if (results !== null) {
-        setActions(results);
-      }
-      intervalId = setInterval(runOnce, bot.config.runInterval);
-    }
-    runOnce();
-    return () => {
-      if (intervalId)
-        clearInterval(intervalId);
-    };
+    const subscription = bot.actionsUpdated$.subscribe(setActions);
+    return subscription.unsubscribe;
   }, []);
 
   let table: VNode<any>;
@@ -38,5 +28,8 @@ export function App({ bot }: { bot: Bot; }) {
     }
     table = html`<table>${rows}</table>`;
   }
-  return table;
+  return html`<div>
+    <${DebugHelper} bot=${bot}/>
+    ${table}
+  </div>`;
 }

@@ -1,13 +1,11 @@
 import { Player } from "@darkforest_eth/types";
 import GameManager from "@df/GameManager";
-import GameUIManager from "@df/GameUIManager";
 import { ArtifactsHandler, AttackHandler, EnergyHandler, SilverHandler } from "./handlers";
 import { createElement, render } from "preact";
 import { App } from "./app";
 import { Bot } from "./bot";
 
 export declare const df: GameManager;
-declare const ui: GameUIManager;
 
 class Plugin {
   container?: HTMLElement;
@@ -24,6 +22,7 @@ class Plugin {
       new EnergyHandler(),
       new AttackHandler(),
     ], df.getAllPlanets(), df.getPlayer() as Player);
+    this.bot.start();
     container.style.width = '600px';
     render(createElement(App, {bot: this.bot}), container);
   }
@@ -31,6 +30,9 @@ class Plugin {
   destroy() {
     if (this.container !== undefined) {
       render(null, this.container);
+    }
+    if (this.bot !== undefined) {
+      this.bot.stop();
     }
   }
 }
