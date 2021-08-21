@@ -48,7 +48,6 @@ function calculateSendAmount(planet: Planet, target: Planet, config: ConfigType<
 function calculateEffort(planet: Planet, target: Planet, config: ConfigType<typeof options>, context: Context) {
     const sendAmount = calculateSendAmount(planet, target, config, context);
     const arriving = df.getEnergyArrivingForMove(planet.locationId, target.locationId, undefined, sendAmount);
-    console.log({sendAmount, arriving})
     return sendAmount / arriving;
 }
 
