@@ -7,7 +7,6 @@ import { DebugHelper } from "./components/debughelper";
 
 enum Panel {
   DEFAULT,
-  ACTIONS,
   DEBUG,
   CONFIG
 }
@@ -19,11 +18,9 @@ export function App({ bot }: { bot: Bot; }) {
     case Panel.DEFAULT:
       return html`<div>
         <button onClick=${() => setActive(Panel.DEBUG)}>Debug</button>
-        <button onClick=${() => setActive(Panel.ACTIONS)}>Pending Actions</button>
         <button onClick=${() => setActive(Panel.CONFIG)}>Configure</button>
+        <${ActionTable} bot=${bot} />
       </div>`;
-    case Panel.ACTIONS:
-      return html`<${ActionTable} bot=${bot} back=${back} />`;
     case Panel.DEBUG:
       return html`<${DebugHelper} bot=${bot} back=${back} />`;
     case Panel.CONFIG:

@@ -5,7 +5,7 @@ import { HandlerAction } from "../actions";
 import { Bot } from "../bot";
 import { getPlanetName } from "../utils";
 
-export function ActionTable({ bot, back }: { bot: Bot; back: ()=>void }) {
+export function ActionTable({ bot }: { bot: Bot }) {
   const [actions, setActions] = useState(null as Array<HandlerAction> | null);
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export function ActionTable({ bot, back }: { bot: Bot; back: ()=>void }) {
   }, []);
 
   if (actions === null) {
-    return html`<button onClick=${back}>Back</button><div>Running</div>`;
+    return html`<div>Running</div>`;
   } else {
     const rows: Array<VNode<any>> = [];
     for (const action of actions) {
@@ -25,7 +25,6 @@ export function ActionTable({ bot, back }: { bot: Bot; back: ()=>void }) {
       }
     }
     return html`<div>
-      <button onClick=${back}>Back</button>
       <table>${rows}</table>
     </div>`;
   }
