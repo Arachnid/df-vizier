@@ -29,6 +29,29 @@ function scorePlanetEnergyNeed(planet: Planet, energy?: number) {
     }
 }
 
+function calculateSendAmount(planet: Planet, target: Planet, config: ConfigType<typeof options>, context: Context) {
+    const maxSendAmount = Math.ceil(planet.energyCap * config.global.energySendAmount);
+    return Math.ceil(
+        Math.min(
+            maxSendAmount,
+            df.getEnergyNeededForMove(
+                planet.locationId,
+                target.locationId,
+                target.energyCap * (1 - config.global.minEnergyReserve)
+                    - target.energy
+                    - (context.incomingEnergy[target.locationId] || 0)
+            )
+        )
+    );
+}
+
+function calculateEffort(planet: Planet, target: Planet, config: ConfigType<typeof options>, context: Context) {
+    const sendAmount = calculateSendAmount(planet, target, config, context);
+    const arriving = df.getEnergyArrivingForMove(planet.locationId, target.locationId, undefined, sendAmount);
+    console.log({sendAmount, arriving})
+    return sendAmount / arriving;
+}
+
 const options = {
 };
 
@@ -55,29 +78,39 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                 && target.locationId != planet.locationId)
             .map((target) => {
                 const score = scorePlanetEnergyNeed(target);
-                const sendAmount = Math.ceil(Math.min(maxSendAmount, target.energyCap * (1 - config.global.minEnergyReserve) - target.energy - (context.incomingEnergy[target.locationId] || 0)));
-                const value = score * (df.getEnergyArrivingForMove(planet.locationId, target.locationId, undefined, sendAmount) / sendAmount);
-                return { planet: target, score, value, sendAmount };
+                const effort = calculateEffort(planet, target, config, context);
+                const value = score / effort
+                return { planet: target, score, effort, value };
             });
         targets.sort((a, b) => b.value - a.value);
 
-        let myEnergy = planet.energy;
         for (const target of targets) {
             if (target.value <= myScore) {
                 break;
             }
-            if (target.sendAmount <= 0) {
+            const sendAmount = calculateSendAmount(planet, target.planet, config, context);
+            if (sendAmount <= 0) {
                 continue;
             }
-            const move = new Move(planet, target.planet, target.sendAmount, 0);
-            if (myEnergy - target.sendAmount >= planet.energyCap * config.global.minEnergyReserve) {
-                myEnergy -= target.sendAmount;
+            const move = new Move(planet, target.planet, sendAmount, 0);
+            if (planet.energy - sendAmount >= planet.energyCap * config.global.minEnergyReserve) {
                 return move;
             } else {
-                const progress = planet.energy / (target.sendAmount + planet.energyCap * config.global.minEnergyReserve);
+                const progress = planet.energy / (sendAmount + planet.energyCap * config.global.minEnergyReserve);
                 return new Wait(progress, move);
             }
         }
         return new NoAction(planet);
+    }
+
+    debugInfo(planet: Planet, target: Planet|undefined, config: ConfigType<typeof options>, context: Context) {
+        const targetScore = target === undefined ? 0 : scorePlanetEnergyNeed(target);
+        const targetEffort = target === undefined ? 0 : calculateEffort(planet, target, config, context);
+        return [
+            {key: "Selected score", value: scorePlanetEnergyNeed(planet).toPrecision(6)},
+            {key: "Target score", value: target === undefined ? '' : targetScore.toPrecision(6)},
+            {key: "Target effort", value: target === undefined ? '' : targetEffort.toPrecision(6)},
+            {key: "Value", value: target === undefined ? '' : (targetScore / targetEffort).toPrecision(6)},
+        ];
     }
 }

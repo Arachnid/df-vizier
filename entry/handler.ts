@@ -1,5 +1,6 @@
 import { LocationId, Planet, Player, QueuedArrival } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
+import { VNode } from "preact";
 import { HandlerAction } from "./actions";
 import { ConfigurationOptions, ConfigType } from "./config";
 
@@ -39,8 +40,14 @@ export class Context {
     }
 }
 
+export interface DebugValue {
+    key: string;
+    value: string;
+}
+
 export interface ActionHandler<T extends ConfigurationOptions> {
     readonly options: T;
 
     run(planet: Planet, config: ConfigType<T>, context: Context): HandlerAction;
+    debugInfo(planet: Planet, target: Planet|undefined, config: ConfigType<T>, context: Context): Array<DebugValue>;
 }

@@ -19,10 +19,10 @@ export class ArtifactsHandler implements ActionHandler<typeof options> {
         }
         if (planet.prospectedBlockNumber === undefined) {
             const prospect = new ProspectPlanet(planet);
-            if (planet.energy >= planet.energyCap * 0.95) {
+            if (planet.energy >= planet.energyCap * 0.96) {
                 return prospect;
             } else {
-                const progress = planet.energy / (planet.energyCap * 0.95);
+                const progress = planet.energy / (planet.energyCap * 0.96);
                 return new Wait(progress, prospect);
             }
         }
@@ -31,5 +31,9 @@ export class ArtifactsHandler implements ActionHandler<typeof options> {
             return new FindArtifact(planet);
         }
         return new NoAction(planet);
+    }
+
+    debugInfo(planet: Planet, target: Planet|undefined, config: ConfigType<typeof options>, context: Context) {
+        return [];
     }
 }

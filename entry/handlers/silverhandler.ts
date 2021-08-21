@@ -102,4 +102,8 @@ export class SilverHandler implements ActionHandler<typeof options> {
         }
         return new NoAction(planet);
     }
+
+    debugInfo(planet: Planet, target: Planet|undefined, config: ConfigType<typeof options>, context: Context) {
+        return [];
+    }
 }

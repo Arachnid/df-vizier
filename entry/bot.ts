@@ -1,6 +1,6 @@
 import { Planet, Player, WorldLocation } from "@darkforest_eth/types";
 import RBush from "rbush";
-import { ActionHandler, Context } from "./handler";
+import { ActionHandler, Context, DebugValue } from "./handler";
 import { ConfigType, ConfigurationOptions, defaultValues, globalConfig, GlobalConfig } from "./config";
 import { HandlerAction, NoAction } from "./actions";
 import { getPlanetName, scorePlanet, stripTags } from "./utils";
@@ -34,6 +34,7 @@ export class Bot {
   planets: RBush<PlanetEntry>;
   actionsUpdated$: Monomitter<Array<HandlerAction>> = monomitter(true);
   interval?: ReturnType<typeof setInterval>;
+  lastContext: Context;
 
   constructor(handlers: Array<ActionHandler<any>>, planets: Iterable<Planet>, player: Player) {
     this.config = Object.fromEntries(Object.entries(globalConfig).map(([key, value]) => [key, value.defaultValue])) as GlobalConfig;
@@ -43,6 +44,7 @@ export class Bot {
     this.planets = new RBush<PlanetEntry>();
     this.buildPlanetIndex(planets, 3);
     this.player = player;
+    this.lastContext = this.makeContext(df.getMyPlanets());
   }
 
   start() {
@@ -97,8 +99,7 @@ export class Bot {
       const myPlanets = df.getMyPlanets();
       myPlanets.sort((a, b) => scorePlanet(b) - scorePlanet(a));
 
-      const context = new Context(this.player, Math.max(...myPlanets.map((planet) => planet.planetLevel)));
-      context.processVoyages(df.getAllVoyages());
+      const context = this.makeContext(myPlanets);
 
       const results: Array<HandlerAction> = [];
       for (const planet of myPlanets) {
@@ -111,12 +112,23 @@ export class Bot {
           log(stripTags(`${getPlanetName(planet)}: ${action.getMessage()}`));
         }
       }
+      this.lastContext = context;
       results.sort((a, b) => b.progress - a.progress);
       return results;
     }
   }
 
-  async runOne(planet: Planet, context: Context): Promise<HandlerAction> {
+  debugInfo(planet: Planet, target: Planet|undefined): Array<{plugin: string, debug: DebugValue[]}> {
+    return this.handlers.map(({handler, config}) => ({plugin: handler.constructor.name, debug: handler.debugInfo(planet, target, config, this.lastContext)}));
+  }
+
+  private makeContext(myPlanets: Array<Planet>) {
+    const context = new Context(this.player, Math.max(...myPlanets.map((planet) => planet.planetLevel)));
+    context.processVoyages(df.getAllVoyages());
+    return context;
+  }
+
+  private async runOne(planet: Planet, context: Context): Promise<HandlerAction> {
     const minTargetLevel = context.maxLevel - this.config.minCaptureLevel;
     // const inRange = df.getPlanetsInRange(planet.locationId, 100 * (1 - this.minEnergyReserve)).filter((planet) => planet.planetLevel >= minTargetLevel);
     const location = df.getLocationOfPlanet(planet.locationId) as WorldLocation;

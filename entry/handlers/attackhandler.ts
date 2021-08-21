@@ -1,7 +1,7 @@
 import { Planet, PlanetType, Player } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
 import { ActionHandler, Context } from "../handler";
-import { ConfigType, Percentage } from "../config";
+import { ConfigType, globalConfig, Percentage } from "../config";
 import { HandlerAction, Move, NoAction, Wait } from "../actions";
 import { scorePlanet } from "../utils";
 
@@ -17,6 +17,23 @@ const options = {
     bigEnemyModifier: new Percentage(0.1),
 };
 
+function calculateEnergyNeeded(planet: Planet, target: Planet, config: ConfigType<typeof options>, context: Context) {
+    const targetEnergy = target.energyCap * config.minCaptureEnergy + (target.energy - (context.incomingEnergy[target.locationId] || 0)) * (target.defense / 100.0);
+    return df.getEnergyNeededForMove(planet.locationId, target.locationId, targetEnergy);
+}
+
+function calculateEffort(planet: Planet, target: Planet, config: ConfigType<typeof options>, context: Context): number {
+    let effort = calculateEnergyNeeded(planet, target, config, context);
+    if(effort > planet.energyCap * (1 - config.global.minEnergyReserve)) {
+        if(target.owner == NO_OWNER) {
+            effort /= config.bigPirateModifier;
+        } else {
+            effort /= config.bigEnemyModifier;
+        }
+    }
+    return effort;
+}
+
 export class AttackHandler implements ActionHandler<typeof options> {
     readonly options = options;
 
@@ -25,8 +42,6 @@ export class AttackHandler implements ActionHandler<typeof options> {
         if (!Object.entries(context.incomingSends[planet.locationId] || {}).every(([a]) => a == player)) {
             return new NoAction(planet);
         }
-
-        const maxSend = planet.energyCap * (1.0 - config.global.minEnergyReserve);
 
         const targets = context.inRange
             .filter((target) =>
@@ -39,35 +54,42 @@ export class AttackHandler implements ActionHandler<typeof options> {
                 // At least min level, and at least our level
                 && target.planetLevel >= planet.planetLevel)
             .map((target) => {
-                let targetEnergy = target.energyCap * config.minCaptureEnergy + (target.energy - (context.incomingEnergy[target.locationId] || 0)) * (target.defense / 100.0);
-                let sendEnergy = Math.ceil(df.getEnergyNeededForMove(planet.locationId, target.locationId, targetEnergy));
-                let score = scorePlanet(target);
-                if (sendEnergy > maxSend) {
-                    sendEnergy = Math.ceil(planet.energyCap * config.partialCaptureAmount);
-                    targetEnergy = df.getEnergyArrivingForMove(planet.locationId, target.locationId, undefined, sendEnergy);
-                    if (target.owner === NO_OWNER) {
-                        score *= config.bigPirateModifier;
-                    } else {
-                        score *= config.bigEnemyModifier;
-                    }
-                }
-                let value = score / sendEnergy;
-                return { planet: target, targetEnergy, sendEnergy, score, value };
+                const score = scorePlanet(target);
+                const effort = calculateEffort(planet, target, config, context);
+                let value = score / effort;
+                return { planet: target, score, effort, value };
             });
         targets.sort((a, b) => b.value - a.value);
 
+        const reserve = planet.energyCap * config.global.minEnergyReserve;
         for (const target of targets) {
-            if (target.sendEnergy <= 0 || target.targetEnergy / target.planet.energy < config.minPartialCapture) {
+            let energyRequired = calculateEnergyNeeded(planet, target.planet, config, context);
+            if(planet.energyCap - energyRequired < reserve) {
+                energyRequired = planet.energyCap * config.partialCaptureAmount;
+            }
+            const energyArriving = df.getEnergyArrivingForMove(planet.locationId, target.planet.locationId, undefined, energyRequired);
+            if(energyArriving < target.planet.energy * config.minPartialCapture) {
                 continue;
             }
-            const move = new Move(planet, target.planet, target.sendEnergy, 0);
-            if (planet.energy - target.sendEnergy >= planet.energyCap * config.global.minEnergyReserve) {
+            const move = new Move(planet, target.planet, energyRequired, 0);
+            if (planet.energy - energyRequired >= reserve) {
                 return move;
             } else {
-                const progress = planet.energy / (target.sendEnergy + planet.energyCap * config.global.minEnergyReserve);
+                const progress = planet.energy / (energyRequired + reserve);
                 return new Wait(progress, move);
             }
         }
         return new NoAction(planet);
+    }
+
+    debugInfo(planet: Planet, target: Planet|undefined, config: ConfigType<typeof options>, context: Context) {
+        const targetScore = target === undefined ? 0 : scorePlanet(target);
+        const effort = target === undefined ? 0 : calculateEffort(planet, target, config, context);
+        return [
+            {key: "Selected score", value: scorePlanet(planet).toFixed(2)},
+            {key: "Target score", value: target === undefined ? '' : targetScore.toPrecision(2)},
+            {key: "Target effort", value: target === undefined ? '' : effort.toPrecision(2)},
+            {key: "Value", value: target === undefined ? '' : (targetScore / effort).toPrecision(2)},
+        ];
     }
 }

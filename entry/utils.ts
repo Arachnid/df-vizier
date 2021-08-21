@@ -1,7 +1,9 @@
 import { Planet, PlanetType, SpaceType } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
 import { html } from 'htm/preact';
+import { useState, useEffect } from "preact/hooks";
 import { isValidElement, toChildArray, VNode } from "preact";
+import { Monomitter } from "@darkforest_eth/events";
 
 declare const df: GameManager;
 
@@ -63,4 +65,13 @@ export function scorePlanet(planet: Planet) {
     const distanceToCenter = df.getDistCoords(location.coords, { x: 0, y: 0 });
     // return (Math.pow(planet.energyCap, 2) * planet.planetLevel * getPlanetScoreModifier(planet)) - Math.pow(distanceToCenter, 2);
     return Math.pow(planet.planetLevel, 2) * getPlanetScoreModifier(planet) / Math.log(distanceToCenter);
+}
+
+export function useMonomitter<T>(target: Monomitter<T>) {
+    const [state, setState] = useState(undefined as T|undefined);
+    useEffect(() => {
+        const subscription = target.subscribe(setState);
+        return subscription.unsubscribe;
+    }, []);
+    return state;
 }
