@@ -1,6 +1,6 @@
 import { Planet } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
-import { ActionHandler, Context } from "../handler";
+import { ActionHandler, Context, PlanetInfo } from "../handler";
 import { ConfigType } from "../config";
 import { FindArtifact, HandlerAction, NoAction, ProspectPlanet, Wait } from "../actions";
 
@@ -12,6 +12,22 @@ const options = {
 
 export class ArtifactsHandler implements ActionHandler<typeof options> {
     readonly options = options;
+    readonly key: string;
+    readonly actionLabel: string;
+    readonly title: string;
+
+    constructor(key: string, actionLabel: string, title: string) { 
+        this.key = key;
+        this.actionLabel = actionLabel;
+        this.title = title;
+    }
+
+    planetAdded(planet: Planet, config: ConfigType<typeof options>): ConfigType<typeof options>|undefined {
+        if(df.isPlanetMineable(planet)) {
+            return Object.assign(Object.create(config), {enabled: true});
+        }
+        return undefined;
+    }
 
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
         if (!df.isPlanetMineable(planet) || planet.unconfirmedProspectPlanet || planet.unconfirmedFindArtifact) {
@@ -33,7 +49,7 @@ export class ArtifactsHandler implements ActionHandler<typeof options> {
         return new NoAction(planet);
     }
 
-    debugInfo(planet: Planet, target: Planet|undefined, config: ConfigType<typeof options>, context: Context) {
+    debugInfo(origin: {planet: Planet, config: ConfigType<typeof options>}, target: {planet: Planet, config: ConfigType<typeof options>}|undefined, context: Context) {
         return [];
     }
 }

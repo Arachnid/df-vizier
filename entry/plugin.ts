@@ -1,6 +1,6 @@
 import { Player } from "@darkforest_eth/types";
 import GameManager from "@df/GameManager";
-import { ArtifactsHandler, AttackHandler, EnergyHandler, SilverHandler } from "./handlers";
+import { ArtifactsHandler, AttackHandler, UpgradeHandler } from "./handlers";
 import { createElement, render } from "preact";
 import { App } from "./app";
 import { Bot } from "./bot";
@@ -17,10 +17,9 @@ class Plugin {
   async render(container: HTMLElement) {
     this.container = container;
     this.bot = new Bot([
-      new ArtifactsHandler(),
-      new SilverHandler(),
-      new EnergyHandler(),
-      new AttackHandler(),
+      new ArtifactsHandler('artifacts', '⛏️', 'Find Artifacts'),
+      new UpgradeHandler('upgrade', '👑', 'Upgrade Planet'),
+      new AttackHandler('attack', '🎯', 'Attack Planets'),
     ], df.getAllPlanets(), df.getPlayer() as Player);
     this.bot.start();
     container.style.width = '600px';

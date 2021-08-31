@@ -1,44 +1,40 @@
+export enum ConfigScope {
+    ALL,
+    OWNED,
+    UNOWNED,
+}
+
 interface Descriptor {
     defaultValue: any;
+    scope: ConfigScope;
+    description: string;
 }
 
-export class Percentage implements Descriptor {
-    defaultValue: number;
+class DescriptorBase<T> implements Descriptor {
+    readonly defaultValue: T;
+    readonly scope: ConfigScope;
+    readonly title: string;
+    readonly description: string;
 
-    constructor(defaultValue: number) {
+    constructor(defaultValue: T, scope: ConfigScope, title: string, description = '') {
         this.defaultValue = defaultValue;
+        this.scope = scope;
+        this.title = title;
+        this.description = description;
     }
 }
 
-export class RelativeLevel implements Descriptor {
-    defaultValue: number;
+export class Percentage extends DescriptorBase<number> { }
+export class NumberOption extends DescriptorBase<number> { }
+export class StringOption extends DescriptorBase<string> { }
+export class BoolOption extends DescriptorBase<boolean> { }
 
-    constructor(defaultValue: number) {
-        this.defaultValue = defaultValue;
-    }
-}
+export class MultipleChoice extends DescriptorBase<string> {
+    choices: Array<[string, string]>;
 
-export class NumberOption implements Descriptor {
-    defaultValue: number;
-
-    constructor(defaultValue: number) {
-        this.defaultValue = defaultValue;
-    }
-}
-
-export class String implements Descriptor {
-    defaultValue: string;
-
-    constructor(defaultValue: string) {
-        this.defaultValue = defaultValue;
-    }
-}
-
-export class BoolOption implements Descriptor {
-    defaultValue: boolean;
-
-    constructor(defaultValue: boolean) {
-        this.defaultValue = defaultValue;
+    constructor(defaultValue: string, scope: ConfigScope, title: string, choices: Array<[string, string]>, description = '') {
+        super(defaultValue, scope, title, description);
+        this.choices = choices;
     }
 }
 
@@ -46,23 +42,10 @@ export interface ConfigurationOptions {
     [key: string]: Descriptor;
 }
 
-export const globalConfig = {
-    energySendAmount: new Percentage(0.7),
-    minEnergyReserve: new Percentage(0.15),
-    dryRun: new BoolOption(false),
-    runInterval: new NumberOption(60000),
-    minCaptureLevel: new RelativeLevel(0),
-    minActionLevel: new RelativeLevel(2),
-};
-
-export type GlobalConfig = {
-    [P in keyof typeof globalConfig]: (typeof globalConfig)[P]["defaultValue"];
-}
-
 export type ConfigType<T extends ConfigurationOptions> = {
     [P in keyof T]: T[P]["defaultValue"];
-} & { global: GlobalConfig };
+} & {enabled: boolean};
 
-export function defaultValues<T extends ConfigurationOptions>(options: T, global: GlobalConfig): ConfigType<T> {
-    return Object.assign(Object.fromEntries(Object.entries(options).map(([key, value]) => [key, value.defaultValue])), { global }) as ConfigType<T>;
+export function defaultValues<T extends ConfigurationOptions>(options: T): ConfigType<T> {
+    return {enabled: false, ...Object.fromEntries(Object.entries(options).map(([key, value]) => [key, value.defaultValue]))} as ConfigType<T>;
 }

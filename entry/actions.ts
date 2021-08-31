@@ -51,7 +51,7 @@ export class Wait implements HandlerAction {
     }
 
     getMessage() {
-        return this.action.getMessage();
+        return html`${Math.floor(this.progress * 100)}% ${this.action.getMessage()}`;
     }
 }
 
@@ -140,16 +140,14 @@ export class Move implements HandlerAction {
         const { planet, to, sendEnergy, sendSilver } = this;
         const energyArriving = Math.floor(df.getEnergyArrivingForMove(planet.locationId, to.locationId, undefined, sendEnergy));
 
-        let amounts: VNode;
-        if (this.sendSilver > 0) {
-            amounts = html`${energyArriving} energy and ${sendSilver} silver`;
-        } else {
-            amounts = html`${energyArriving} energy`;
-        }
         if (this.planet.owner == this.to.owner) {
-            return html`Sending ${amounts} to ${getPlanetName(to)}`;
+            if(this.sendSilver > 0) {
+                return html`Sending silver to ${getPlanetName(to)}`;
+            } else {
+                return html`Sending energy to ${getPlanetName(to)}`;
+            }
         } else {
-            return html`Attacking ${getPlanetName(to)} with ${amounts}`;
+            return html`Attacking ${getPlanetName(to)}`;
         }
     }
 }
