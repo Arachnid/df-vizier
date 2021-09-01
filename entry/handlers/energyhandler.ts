@@ -123,7 +123,11 @@ export class EnergyHandler implements ActionHandler<typeof options> {
         targets.sort((a, b) => b.score - a.score);
 
         const reserve = planet.energyCap * config.minEnergyReserve;
-        for (let {target, targetConfig, sendAmount, receiveAmount} of targets) {
+        for (let {target, targetConfig, sendAmount, receiveAmount, score} of targets) {
+            if(score < config.priority) {
+                // Don't send from a higher priority planet to a lower priority one.
+                break;
+            }
             if(receiveAmount / target.energyCap < targetConfig.minTargetPercentage) {
                 // Don't bother with sends that won't move the needle
                 continue;
