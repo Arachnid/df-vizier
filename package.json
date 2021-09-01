@@ -1,21 +1,33 @@
 {
+  "name": "df-vizier",
+  "version": "0.1.0",
+  "main": "dist/plugin.js",
+  "files": [
+    "dist"
+  ],
   "target": "ESNext",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arachnid/df-vizier.git"
+  },
+  "author": "Nick Johnson <arachnid@notdot.net>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/arachnid/df-vizier/issues"
+  },
+  "homepage": "https://github.com/arachnid/df-vizier#readme",
   "dependencies": {
+    "@darkforest_eth/types": "^6.5.5",
     "@darkforest_eth/events": "^6.5.5",
-    "@types/rbush": "^3.0.0",
     "htm": "^3.1.0",
-    "preact": "^10.5.14",
-    "rbush": "^3.0.1"
+    "preact": "^10.5.14"
   },
   "devDependencies": {
-    "@darkforest_eth/hashing": "^6.5.5",
-    "@darkforest_eth/snarks": "^6.5.5",
-    "@darkforest_eth/types": "^6.5.5",
-    "@projectsophon/df-plugin-dev-server": "^1.1.0",
+    "@projectsophon/df-plugin-dev-server": "^1.4.0",
     "esbuild": "^0.12.8"
   },
   "scripts": {
     "dev": "df-plugin-dev-server --dir entry",
-    "build": "esbuild entry/* --bundle --format=esm --target=es2020 --outdir=dist"
+    "build": "df-plugin-dev-server bundle --glob entry/plugin.ts --outdir=dist --preact"
   }
 }
