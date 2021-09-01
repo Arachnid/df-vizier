@@ -1,12 +1,16 @@
-import { Context, HandlerInfo, PlanetInfo } from '../handler';
+import { HandlerInfo } from '../handler';
 import { html } from 'htm/preact';
 import { useEffect, useState } from 'preact/hooks';
 import { getPlanetName, useMonomitter } from "../utils";
 import { Planet } from '@darkforest_eth/types';
 import { ConfigurationPanel } from './configuration';
 import { ConfigScope, ConfigType, ConfigurationOptions } from 'entry/config';
+import { VNode } from 'preact';
+import { DebugHelper } from './debughelper';
+import { Bot } from '../bot';
 
-export function PlanetPanel({ context, planet, target, saveSettings }: { context: Context, planet: Planet, target?: Planet, saveSettings: () => void }) {
+export function PlanetPanel({ bot, planet, target, saveSettings }: { bot: Bot, planet: Planet, target?: Planet, saveSettings: () => void }) {
+    const { context } = bot;
     const [handlers, setHandlers] = useState(new Map<string, HandlerInfo<any>>());
 
     useEffect(() => {
@@ -44,9 +48,9 @@ export function PlanetPanel({ context, planet, target, saveSettings }: { context
         saveSettings();
     }
 
+    let configuration: VNode;
     if(planet.owner === context.player.address) {
-        return html`<div>
-            <h1>${getPlanetName(planet)}</h1>
+        configuration = html`<div>
             <table>
                 <thead>
                     <tr><th>Action</th><th>Enabled</th></tr>
@@ -75,7 +79,7 @@ export function PlanetPanel({ context, planet, target, saveSettings }: { context
         const entries = Array.from(handlers.entries())
             .filter(([key, handler]) => Object.values(handler.handler.options as ConfigurationOptions)
                 .some((descriptor) => descriptor.scope === ConfigScope.ALL || descriptor.scope === ConfigScope.UNOWNED));
-        return html`<div>
+        configuration = html`<div>
             <h1>${getPlanetName(planet)}</h1>
             <table>
                 ${entries.map(([key, handler]) => html`
@@ -96,4 +100,14 @@ export function PlanetPanel({ context, planet, target, saveSettings }: { context
             <button onClick=${save}>Save</button>
         </div>`;
     }
+
+    return html`
+        <h1>${getPlanetName(planet)}</h1>
+        <h2>Next Action</h2>
+        <div>${bot.nextActions.get(planet.locationId)?.getMessage() || 'Nothing to do'}</div>
+        <h2>Configuration</h2>
+        ${configuration}
+        <h2>Debug</h2>
+        ${bot.config.debug && html`<${DebugHelper} bot=${bot} planet=${planet} target=${target} />`}
+    `;
 }

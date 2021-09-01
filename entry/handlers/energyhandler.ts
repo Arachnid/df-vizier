@@ -124,7 +124,7 @@ export class EnergyHandler implements ActionHandler<typeof options> {
 
         const reserve = planet.energyCap * config.minEnergyReserve;
         for (let {target, targetConfig, sendAmount, receiveAmount, score} of targets) {
-            if(score < config.priority) {
+            if(score < this.effectivePriorities[planet.locationId].priority) {
                 // Don't send from a higher priority planet to a lower priority one.
                 break;
             }
@@ -144,6 +144,35 @@ export class EnergyHandler implements ActionHandler<typeof options> {
     }
 
     debugInfo(origin: {planet: Planet, config: ConfigType<typeof options>}, target: {planet: Planet, config: ConfigType<typeof options>}|undefined, context: Context) {
-        return [];
+        const values = [
+            {key: "Effective Priority", value: this.effectivePriorities[origin.planet.locationId].priority.toPrecision(6)},
+        ];
+
+        let action = this.run(origin.planet, origin.config, context);
+        if(action instanceof Wait) {
+            action = action.action;
+        }
+        if(action instanceof Move) {
+            values.push({
+                key: "Next: Send quantity",
+                value: `${Math.floor(action.sendEnergy)} (${Math.floor(100 * action.sendEnergy / action.planet.energyCap)}%)`
+            });
+            const receiveAmount = df.getEnergyArrivingForMove(action.planet.locationId, action.to.locationId, undefined, action.sendEnergy);
+            const efficiency = receiveAmount / action.sendEnergy;
+            values.push({
+                key: "Next: Receive quantity",
+                value: `${Math.floor(receiveAmount)} (${Math.floor(100 * receiveAmount / action.to.energyCap)}%)`
+            });
+            values.push({
+                key: "Next: Efficiency",
+                value: `${Math.floor(100 * efficiency)}%`
+            });
+            values.push({
+                key: "Next: Effective Priority",
+                value: `${(this.effectivePriorities[action.to.locationId].priority * efficiency).toPrecision(6)}`
+            })
+        }
+
+        return values;
     }
 }

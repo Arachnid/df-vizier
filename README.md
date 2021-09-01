@@ -37,7 +37,7 @@ Each planet has a priority. Planets aim to send energy to the target planet with
 
 Priorities default to 0 - meaning the planet will not receive energy for itself, only as part of a route to targets with nonzero priorities. The values of priorities matter only relative to each other, so you can use whatever numbers you feel comfortable with.
 
-A number of other settings are confirable:
+A number of other settings are configurable:
  - Min. energy reserve: The minimum percentage of the source planet's energy to retain after a send. Defaults to 15%.
  - Max send amount: The maximum percentage of source planet's energy cap to send at once. If a capture or top-up requires more energy than the planet can send at once, it will wait until it can send this percentage without eating into the reserve. Defaults to 70% - with the default reserve of 15% this means sends will typically happen at 85% energy.
  - Min capture energy: The minimum percentage of target energy cap to fill on a successful attack. Defaults to 5%.

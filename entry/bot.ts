@@ -23,6 +23,7 @@ interface PlanetEntry {
 export const globalConfig = {
   dryRun: new BoolOption(true, ConfigScope.ALL, 'Dry Run'),
   runInterval: new NumberOption(60000, ConfigScope.ALL, 'Run Interval'),
+  debug: new BoolOption(false, ConfigScope.ALL, 'Show Debug Information'),
 };
 
 interface SavedSettings {
@@ -33,6 +34,7 @@ interface SavedSettings {
 
 export class Bot {
   config: ConfigType<typeof globalConfig>;
+  nextActions: Map<string, HandlerAction>;
   actionsUpdated$: Monomitter<Map<string, HandlerAction>> = monomitter(true);
   interval?: ReturnType<typeof setInterval>;
   context: Context;
@@ -132,6 +134,7 @@ export class Bot {
           log(stripTags(`${getPlanetName(planet)}: ${action.getMessage()}`));
         }
       }
+      this.nextActions = results;
       this.actionsUpdated$.publish(results);
     }
   }
