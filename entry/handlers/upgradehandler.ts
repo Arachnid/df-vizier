@@ -52,6 +52,8 @@ export class UpgradeHandler implements ActionHandler<typeof options> {
         return Object.create(config);
     }
 
+    prepare(context: Context) {}
+
     run(planet: Planet, config: ConfigType<typeof options>, context: Context): HandlerAction {
         const rank = planet.upgradeState.reduce((a, b) => a + b);
         // Check we're not already maxed out

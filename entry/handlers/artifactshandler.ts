@@ -22,6 +22,8 @@ export class ArtifactsHandler implements ActionHandler<typeof options> {
         this.title = title;
     }
 
+    prepare(context: Context) {}
+
     planetAdded(planet: Planet, config: ConfigType<typeof options>): ConfigType<typeof options>|undefined {
         if(df.isPlanetMineable(planet)) {
             return Object.assign(Object.create(config), {enabled: true});

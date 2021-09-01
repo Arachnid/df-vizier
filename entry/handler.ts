@@ -16,6 +16,7 @@ export interface ActionHandler<T extends ConfigurationOptions> {
     readonly actionLabel: string;
     readonly title: string;
 
+    prepare(context: Context);
     planetAdded(planet: Planet, config: ConfigType<T>): ConfigType<T>|undefined;
     run(planet: Planet, config: ConfigType<T>, context: Context): HandlerAction;
     debugInfo(origin: { planet: Planet, config: ConfigType<T> }, target: { planet: Planet, config: ConfigType<T> } | undefined, context: Context): Array<DebugValue>;
@@ -27,12 +28,12 @@ export interface HandlerInfo<T extends ConfigurationOptions> {
 }
 
 export class PlanetInfo {
-    planet: Planet;
+    locationId: LocationId;
     location: WorldLocation;
     handlers: Map<string, HandlerInfo<any>>;
 
     constructor(planet: Planet, globalHandlers: Array<HandlerInfo<any>>) {
-        this.planet = planet;
+        this.locationId = planet.locationId;
         this.handlers = new Map(globalHandlers.flatMap(({ handler, config }) => {
             const planetConfig = handler.planetAdded(planet, config);
             if(planetConfig === undefined) return [];
@@ -49,6 +50,10 @@ export class PlanetInfo {
             throw new Error("Cannot create a PlanetInfo for planets without locations");
         }
         this.location = location;
+    }
+
+    get planet() {
+        return df.getPlanetWithId(this.locationId) as Planet;
     }
 
     get minX() {

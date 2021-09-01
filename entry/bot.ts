@@ -120,6 +120,10 @@ export class Bot {
       log(`Beginning run...`);
       this.context.processVoyages(df.getAllVoyages());
 
+      for(const handler of this.context.handlers.values()) {
+        handler.handler.prepare(this.context);
+      }
+
       const results = new Map<string, HandlerAction>();
       for (const {planet, handlers} of this.context.getMyPlanets()) {
         const action = await this.runOne(planet, handlers, dryRun);
