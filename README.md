@@ -45,6 +45,19 @@ A number of other settings are confirable:
 
 ## Installing and running
 
+Create a new plugin with this code:
+
+```
+export { default } from "https://cdn.skypack.dev/df-vizier"
+```
+
+You can also pin it to a version:
+```
+export { default } from "https://cdn.skypack.dev/df-vizier@1.0.0"
+```
+
+## Developing
+
 To get started run:
 
 `$ yarn install`  
