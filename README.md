@@ -9,11 +9,11 @@ Handlers have global settings affecting their behaviour; settings can be overrid
 Once a run completes, the AI waits until all triggered transactions have completed before starting a new round.
 
 ### UI
-![planet_list.png]
+![](./planet_list.png)
 
 When no planet is selected, Vizier shows a sortable table of all planets you own. Each action handler has a column with checkboxes for all planets it applies to, so handlers can be quickly toggled for each planet. Clicking on a planet in the left column will select it.
 
-![planet_config.png]
+![](./planet_config.png)
 
 When a planet is selected (via the planet list or otherwise), Vizier changes to showing configuration settings for that planet. Each supported handler is shown along with an 'enable' checkbox. When enabled, configuration setting overrides for that handler on the selected planet are shown; untick 'default' or make a change to a value to override that setting. Click 'Save' to commit your changes.
 
