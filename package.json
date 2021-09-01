@@ -1,6 +1,6 @@
 {
   "name": "df-vizier",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "main": "dist/plugin.js",
   "files": [
     "dist"
@@ -17,8 +17,8 @@
   },
   "homepage": "https://github.com/arachnid/df-vizier#readme",
   "dependencies": {
-    "@darkforest_eth/types": "^6.5.5",
     "@darkforest_eth/events": "^6.5.5",
+    "@darkforest_eth/types": "^6.5.5",
     "htm": "^3.1.0",
     "preact": "^10.5.14"
   },
