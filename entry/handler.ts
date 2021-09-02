@@ -1,5 +1,6 @@
 import { LocationId, Planet, Player, QueuedArrival, WorldLocation } from "@darkforest_eth/types";
 import GameManager from "@df_client/src/Backend/GameLogic/GameManager";
+import { VNode } from "preact";
 import { HandlerAction } from "./actions";
 import { ConfigurationOptions, ConfigType, defaultValues } from "./config";
 
@@ -7,7 +8,7 @@ export declare const df: GameManager;
 
 export interface DebugValue {
     key: string;
-    value: string;
+    value: string|VNode;
 }
 
 export interface ActionHandler<T extends ConfigurationOptions> {
