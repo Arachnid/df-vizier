@@ -10,10 +10,8 @@ declare const df: GameManager;
 
 const options = {
     minEnergyReserve: new Percentage(0.15, ConfigScope.OWNED, 'Min. energy reserve', 'Minimum percentage of energy to retain after a send'),
-    maxSendAmount: new Percentage(0.7, ConfigScope.OWNED, 'Max send amount', "Maximum percentage of source planet's energy cap to send at once"),
+    maxEnergyReserve: new Percentage(0.85, ConfigScope.ALL, 'Max energy reserve', 'Max energy percentage to reach with sends'),
     send: new BoolOption(true, ConfigScope.OWNED, 'Send energy'),
-    maxEnergyReserve: new Percentage(0.85, ConfigScope.OWNED, 'Max energy reserve', 'Max energy percentage to reach with sends'),
-    minCaptureEnergy: new Percentage(0.05, ConfigScope.UNOWNED, 'Minimum capture energy', 'Min percentage of target energy cap to fill on a successful attack'),
     minTargetPercentage: new Percentage(0.05, ConfigScope.ALL, 'Min target percentage', 'Minimum percentage of target energy cap to affect with a send'),
     priority: new NumberOption(0, ConfigScope.ALL, 'Priority'),
 };
@@ -51,11 +49,11 @@ function allPairsShortestPath<T>(vertices: {[key: string]: T}, getCost: (a: T, b
     return costs;
 }
 
-function calculateEnergyNeeded(planet: Planet, target: Planet, minEnergyReserve: number, maxSendAmount: number, minCaptureEnergy: number, context: Context) {
+function calculateEnergyNeeded(planet: Planet, target: Planet, minEnergyReserve: number, maxSendAmount: number, targetEnergyReserve: number, context: Context) {
     let receiveAmount;
     if(target.owner !== context.player.address) {
-        receiveAmount = (target.energy - (context.incomingEnergy[target.locationId] || 0)) * (target.defense / 100.0)
-            + target.energyCap * minCaptureEnergy;
+        let required = target.energy * (target.defense / 100.0) + target.energyCap * targetEnergyReserve;
+        receiveAmount = required - (context.incomingEnergy[target.locationId] || 0);
     } else {
         receiveAmount = target.energyCap - target.energy;
     }
@@ -109,7 +107,8 @@ export class EnergyHandler implements ActionHandler<typeof options> {
 
         const getCost = (a: typeof planets[0], b: typeof planets[0]) => {
             if(a.config === undefined || !b.receive) return 1.0;
-            const {sendAmount, receiveAmount} = calculateEnergyNeeded(a.planet, b.planet, a.config.minEnergyReserve, a.config.maxSendAmount, b.config?.minCaptureEnergy || 0, context);
+            const {sendAmount, receiveAmount} = calculateEnergyNeeded(a.planet, b.planet, a.config.minEnergyReserve, (a.config.maxEnergyReserve - a.config.minEnergyReserve), b.config?.maxEnergyReserve || 0, context);
+            if(sendAmount <= 0 || receiveAmount <= 0) return 1.0;
             return 1 - (receiveAmount / sendAmount);
         }
 
@@ -156,8 +155,14 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                 continue;
             }
 
-            const nextConfig = context.getPlanetInfo(next).handlers.get(this.key) as ConfigType<typeof options>;
-            const {sendAmount, receiveAmount} = calculateEnergyNeeded(planet, next, config.minEnergyReserve, config.maxSendAmount, nextConfig.minCaptureEnergy, context);
+            const nextConfig = context.getPlanetInfo(next).handlers.get(this.key)?.config as ConfigType<typeof options>;
+            const {sendAmount, receiveAmount} = calculateEnergyNeeded(
+                planet,
+                next,
+                config.minEnergyReserve,
+                (config.maxEnergyReserve - config.minEnergyReserve),
+                nextConfig.maxEnergyReserve,
+                context);
             
             if(receiveAmount / next.energyCap < nextConfig.minTargetPercentage) {
                 // Don't bother with sends that won't move the needle
@@ -213,7 +218,7 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                     value: html`${getPlanetName(nextPlanet)}`
                 });
                 const nextConfig = context.getPlanetInfo(nextPlanet).handlers.get(this.key)?.config as ConfigType<typeof options>;
-                const {sendAmount, receiveAmount} = calculateEnergyNeeded(origin.planet, target.planet, origin.config.minEnergyReserve, origin.config.maxSendAmount, nextConfig.minCaptureEnergy, context);
+                const {sendAmount, receiveAmount} = calculateEnergyNeeded(origin.planet, target.planet, origin.config.minEnergyReserve, origin.config.maxEnergyReserve - origin.config.minEnergyReserve, nextConfig.maxEnergyReserve, context);
                 values.push({
                     key: "Target Next: Send quantity",
                     value: `${Math.floor(sendAmount)} (${Math.floor(100 * sendAmount / origin.planet.energyCap)}%)`
