@@ -12,7 +12,6 @@ const options = {
     minEnergyReserve: new Percentage(0.15, ConfigScope.OWNED, 'Min. energy reserve', 'Minimum percentage of energy to retain after a send'),
     maxEnergyReserve: new Percentage(0.85, ConfigScope.ALL, 'Max energy reserve', 'Max energy percentage to reach with sends'),
     send: new BoolOption(true, ConfigScope.OWNED, 'Send energy'),
-    minTargetPercentage: new Percentage(0.05, ConfigScope.ALL, 'Min target percentage', 'Minimum percentage of target energy cap to affect with a send'),
     priority: new NumberOption(0, ConfigScope.ALL, 'Priority'),
 };
 
@@ -164,11 +163,6 @@ export class EnergyHandler implements ActionHandler<typeof options> {
                 nextConfig.maxEnergyReserve,
                 context);
             
-            if(receiveAmount / next.energyCap < nextConfig.minTargetPercentage) {
-                // Don't bother with sends that won't move the needle
-                continue;
-            }
-
             const move = new Move(planet, next, sendAmount, 0);
             if (planet.energy - sendAmount >= reserve) {
                 return move;
